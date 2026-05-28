@@ -22,8 +22,6 @@ CONFIG_PACKAGE_luci-app-openclash=y
 
 # ============ 组网 / VPN ============
 CONFIG_PACKAGE_luci-app-tailscale=y
-CONFIG_PACKAGE_luci-app-zerotier=y
-CONFIG_PACKAGE_luci-app-easytier=y
 CONFIG_PACKAGE_luci-app-wireguard=y
 CONFIG_PACKAGE_luci-app-frps=y
 
