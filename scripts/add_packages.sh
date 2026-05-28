@@ -32,7 +32,6 @@ git clone --depth 1 "${GHPROXY}https://github.com/kenzok8/small-package" /tmp/sm
 # 需要的包 + 其后端依赖包目录名（存在才拷）
 # 注意：frp 是 luci-app-frps 的后端（提供 frps 二进制），保留
 SMALL_PKGS="
-luci-app-easytier easytier
 frp
 luci-app-taskplan
 luci-app-timewol
