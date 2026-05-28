@@ -1,50 +1,55 @@
 #!/bin/bash
+# 工作目录 = project/ (与 friendlywrt/ kernel/ u-boot/ 平级)
+# 在 build.yml 的 "Apply customizations" 步骤被 source 调用
+set -eu
 
-# Detect whether this is OpenWrt 25+ by probing feeds.conf.default for the
-# "video" feed line, which only ships in OpenWrt 25+.
-IS_OPENWRT_25=0
-if [ -f friendlywrt/feeds.conf.default ] \
-   && grep -qE '^[[:space:]]*src-git[[:space:]]+video[[:space:]]+https' friendlywrt/feeds.conf.default; then
-    IS_OPENWRT_25=1
-fi
-echo "add_packages.sh: IS_OPENWRT_25=${IS_OPENWRT_25}"
+GHPROXY=""   # 国内可填 "https://ghfast.top/" 之类的加速前缀，留空走直连
+PKG_DIR="friendlywrt/package"
 
-# {{ Add luci-app-diskman
-(cd friendlywrt && {
-    mkdir -p package/luci-app-diskman
-    if [ "${IS_OPENWRT_25}" = "1" ]; then
-        wget https://raw.githubusercontent.com/lisaac/luci-app-diskman/master/applications/luci-app-diskman/Makefile -O package/luci-app-diskman/Makefile
+clone() {  # clone <repo-url> <target-name> [branch]
+    local url="${GHPROXY}$1" name="$2" br="${3:-}"
+    echo ">>> clone $name"
+    if [ -n "$br" ]; then
+        git clone --depth 1 -b "$br" "$url" "${PKG_DIR}/$name" || true
     else
-        wget https://raw.githubusercontent.com/lisaac/luci-app-diskman/master/applications/luci-app-diskman/Makefile.old -O package/luci-app-diskman/Makefile
-    fi
-    mkdir -p package/parted
-    wget https://raw.githubusercontent.com/lisaac/luci-app-diskman/master/Parted.Makefile -O package/parted/Makefile
-})
-cat >> configs/rockchip/01-nanopi <<EOL
-CONFIG_PACKAGE_luci-app-diskman=y
-CONFIG_PACKAGE_luci-app-diskman_INCLUDE_btrfs_progs=y
-CONFIG_PACKAGE_luci-app-diskman_INCLUDE_lsblk=y
-CONFIG_PACKAGE_luci-i18n-diskman-zh-cn=y
-CONFIG_PACKAGE_smartmontools=y
-EOL
-# }}
-
-# {{ Add luci-theme-argon
-(cd friendlywrt/package && {
-    [ -d luci-theme-argon ] && rm -rf luci-theme-argon
-    git clone https://github.com/jerrykuku/luci-theme-argon.git --depth 1 -b master
-})
-echo "CONFIG_PACKAGE_luci-theme-argon=y" >> configs/rockchip/01-nanopi
-sed -i -e 's/function init_theme/function old_init_theme/g' friendlywrt/target/linux/rockchip/armv8/base-files/root/setup.sh
-APPEND_TEXT="$(mktemp -t appendtext.XXXXXX)"
-trap 'rm -f "$APPEND_TEXT"' EXIT
-cat > "$APPEND_TEXT" <<EOL
-function init_theme() {
-    if uci get luci.themes.Argon >/dev/null 2>&1; then
-        uci set luci.main.mediaurlbase="/luci-static/argon"
-        uci commit luci
+        git clone --depth 1 "$url" "${PKG_DIR}/$name" || true
     fi
 }
-EOL
-sed -i -e "/boardname=/r $APPEND_TEXT" friendlywrt/target/linux/rockchip/armv8/base-files/root/setup.sh
-# }}
+
+# ===== 独立权威仓库（干净、不冲突）=====
+clone https://github.com/nikkinikki-org/OpenWrt-nikki    nikki                  main
+clone https://github.com/vernesong/OpenClash             OpenClash
+clone https://github.com/jerrykuku/luci-theme-argon      luci-theme-argon
+clone https://github.com/jerrykuku/luci-app-argon-config luci-app-argon-config
+clone https://github.com/asvow/luci-app-tailscale        luci-app-tailscale
+clone https://github.com/gdy666/luci-app-lucky           luci-app-lucky
+
+# ===== 从 small-package 精选拷贝（只取需要的，避免整源冲突）=====
+echo ">>> fetch small-package (临时)"
+git clone --depth 1 "${GHPROXY}https://github.com/kenzok8/small-package" /tmp/small || true
+
+# 需要的包 + 其后端依赖包目录名（存在才拷）
+SMALL_PKGS="
+luci-app-easytier easytier
+luci-app-frps frp
+luci-app-subconverter subconverter
+luci-app-taskplan
+luci-app-timewol
+luci-app-fastnet
+luci-app-unishare
+"
+for p in $SMALL_PKGS; do
+    if [ -d "/tmp/small/$p" ]; then
+        echo "    copy $p"
+        cp -rf "/tmp/small/$p" "${PKG_DIR}/$p"
+    else
+        echo "    !! $p 在 small-package 中未找到，跳过（请核对准确包名）"
+    fi
+done
+
+# ===== 同名冲突清理模板 =====
+# 如果第三方包与官方 feed 重名导致编译失败，删官方让位，例如：
+# rm -rf friendlywrt/feeds/luci/applications/luci-app-xxx
+# 目前你的清单无需处理，留作模板。
+
+echo ">>> add_packages done"

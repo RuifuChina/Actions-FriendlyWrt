@@ -1,0 +1,35 @@
+#!/bin/sh
+# 旁路由一键默认配置：DHCP获取地址 / 关DHCP服务器 / 关IPv6 / 密码root / argon主题
+# 首次启动只执行一次
+
+# --- 后台密码设为 root（建议跑通后自行改强密码）---
+(echo "root"; echo "root") | passwd root >/dev/null 2>&1
+
+# --- LAN 改为 DHCP 客户端（后台地址由主路由分配）---
+uci set network.lan.proto='dhcp'
+uci -q delete network.lan.ip6assign
+uci set network.lan.delegate='0'
+
+# --- 关闭 LAN 的 DHCP 服务器 ---
+uci set dhcp.lan.ignore='1'
+uci set dhcp.lan.dhcpv6='disabled'
+uci set dhcp.lan.ra='disabled'
+uci set dhcp.lan.ndp='disabled'
+
+# --- 关闭 IPv6 ---
+uci -q delete network.wan6
+/etc/init.d/odhcpd disable 2>/dev/null
+{
+  echo "net.ipv6.conf.all.disable_ipv6=1"
+  echo "net.ipv6.conf.default.disable_ipv6=1"
+  echo "net.ipv6.conf.lo.disable_ipv6=1"
+} >> /etc/sysctl.conf
+
+# --- 默认主题 argon ---
+uci set luci.main.mediaurlbase='/luci-static/argon'
+
+# --- 旁路由：关 SYN flood 防护 ---
+uci set firewall.@defaults[0].syn_flood='0'
+
+uci commit
+exit 0
