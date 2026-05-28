@@ -1,5 +1,5 @@
 #!/bin/bash
-# 工作目录 = project/ (与 friendlywrt/ kernel/ u-boot/ 平级)
+# 工作目录 = project/ (与 friendlywrt/ configs/ kernel/ u-boot/ 平级)
 # 在 build.yml 的 "Apply customizations" 步骤被 source 调用
 set -eu
 
@@ -23,15 +23,17 @@ clone https://github.com/jerrykuku/luci-theme-argon      luci-theme-argon
 clone https://github.com/jerrykuku/luci-app-argon-config luci-app-argon-config
 clone https://github.com/asvow/luci-app-tailscale        luci-app-tailscale
 clone https://github.com/gdy666/luci-app-lucky           luci-app-lucky
+clone https://github.com/lwz322/luci-app-frps            luci-app-frps          # small-package 里没有，单独拉
 
 # ===== 从 small-package 精选拷贝（只取需要的，避免整源冲突）=====
 echo ">>> fetch small-package (临时)"
 git clone --depth 1 "${GHPROXY}https://github.com/kenzok8/small-package" /tmp/small || true
 
 # 需要的包 + 其后端依赖包目录名（存在才拷）
+# 注意：frp 是 luci-app-frps 的后端（提供 frps 二进制），保留
 SMALL_PKGS="
 luci-app-easytier easytier
-luci-app-frps frp
+frp
 luci-app-subconverter subconverter
 luci-app-taskplan
 luci-app-timewol
@@ -46,10 +48,5 @@ for p in $SMALL_PKGS; do
         echo "    !! $p 在 small-package 中未找到，跳过（请核对准确包名）"
     fi
 done
-
-# ===== 同名冲突清理模板 =====
-# 如果第三方包与官方 feed 重名导致编译失败，删官方让位，例如：
-# rm -rf friendlywrt/feeds/luci/applications/luci-app-xxx
-# 目前你的清单无需处理，留作模板。
 
 echo ">>> add_packages done"

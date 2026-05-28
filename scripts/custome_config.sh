@@ -3,11 +3,17 @@
 # 在 build.yml 的 "Apply customizations" 步骤被 source 调用（在 add_packages.sh 之后）
 set -eu
 
-# non-docker 用的种子配置文件
-CFG="friendlywrt/configs/rockchip"
+# non-docker 的配置目录（mk-friendlywrt.sh 会 cat 目录里所有文件拼成 .config）
+# 命名 zzzz-custom.config 保证 ls 排序时最后追加
+CFG_DIR="configs/rockchip"
 
-cat >> "$CFG" <<'EOF'
+if [ ! -d "$CFG_DIR" ]; then
+    echo "ERROR: $CFG_DIR 不存在（应为配置片段目录），检查 repo sync configs 是否成功"
+    ls -la configs/ 2>/dev/null || true
+    exit 1
+fi
 
+cat > "$CFG_DIR/zzzz-custom.config" << 'EOF'
 # ============ 科学上网 ============
 CONFIG_PACKAGE_nikki=y
 CONFIG_PACKAGE_luci-app-nikki=y
@@ -56,6 +62,8 @@ CONFIG_PACKAGE_curl=y
 CONFIG_PACKAGE_wget-ssl=y
 CONFIG_PACKAGE_tcpdump=y
 EOF
+
+echo ">>> 已写入 $CFG_DIR/zzzz-custom.config"
 
 # 把默认配置文件烤进固件（旁路由 / 密码 / 关 IPv6 / 关 DHCP）
 mkdir -p friendlywrt/files/etc/uci-defaults
