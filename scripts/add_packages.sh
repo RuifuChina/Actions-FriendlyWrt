@@ -34,7 +34,6 @@ git clone --depth 1 "${GHPROXY}https://github.com/kenzok8/small-package" /tmp/sm
 SMALL_PKGS="
 luci-app-easytier easytier
 frp
-luci-app-subconverter subconverter
 luci-app-taskplan
 luci-app-timewol
 luci-app-fastnet
