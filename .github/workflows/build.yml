@@ -6,7 +6,8 @@ on:
       - 'scripts/**'
       - 'files/**'
       - '.github/workflows/**'
-
+permissions:
+  contents: write
 jobs:
   prepare_release:
     runs-on: ubuntu-22.04
