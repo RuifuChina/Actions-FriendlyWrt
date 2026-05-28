@@ -35,6 +35,7 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       CI: ""
+      GITHUB_ACTIONS: ""
     strategy:
       matrix:
         VERSION: ['24.10']
