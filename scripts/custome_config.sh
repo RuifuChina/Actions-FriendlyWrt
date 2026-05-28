@@ -42,7 +42,6 @@ CONFIG_PACKAGE_luci-app-arpbind=y
 CONFIG_PACKAGE_luci-app-netdata=y
 CONFIG_PACKAGE_luci-app-statistics=y
 CONFIG_PACKAGE_luci-app-fastnet=y
-CONFIG_PACKAGE_luci-app-subconverter=y
 CONFIG_PACKAGE_btop=y
 
 # ============ 主题 ============
