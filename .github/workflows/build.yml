@@ -33,6 +33,8 @@ jobs:
   build_friendlywrt:
     needs: prepare_release
     runs-on: ubuntu-22.04
+    env:
+      CI: ""
     strategy:
       matrix:
         VERSION: ['24.10']
