@@ -103,6 +103,7 @@ jobs:
       id: compile
       continue-on-error: true
       run: |
+        unset GITHUB_ACTIONS CI
         cd project/friendlywrt
         if ! make -j$(nproc); then
           echo "::warning::parallel build failed, retrying with V=s"
@@ -111,6 +112,7 @@ jobs:
     - name: Check the result and try again
       if: steps.compile.outcome == 'failure'
       run: |
+        unset GITHUB_ACTIONS CI
         cd project/friendlywrt
         make -j1 V=s
     - name: Create rootfs package
