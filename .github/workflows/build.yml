@@ -105,6 +105,8 @@ jobs:
       run: |
         unset GITHUB_ACTIONS CI
         cd project/friendlywrt
+        sed -i 's|--set=llvm.download-ci-llvm=true|--set=llvm.download-ci-llvm=false|' \
+          feeds/packages/lang/rust/Makefile
         if ! make -j$(nproc); then
           echo "::warning::parallel build failed, retrying with V=s"
           make -j1 V=s
@@ -114,6 +116,11 @@ jobs:
       run: |
         unset GITHUB_ACTIONS CI
         cd project/friendlywrt
+        sed -i 's|--set=llvm.download-ci-llvm=true|--set=llvm.download-ci-llvm=false|' \
+          feeds/packages/lang/rust/Makefile
+        # 清掉 rust 上次失败的配置状态，强制重配
+        rm -rf build_dir/target-*_musl/host/rustc-*-src/.configured \
+               build_dir/target-*_musl/host/rustc-*-src/build
         make -j1 V=s
     - name: Create rootfs package
       id: create_rootfs_package
